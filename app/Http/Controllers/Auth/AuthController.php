@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\User;
-use Validator;
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\ThrottlesLogins;
+use App\User;
 use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
+use Illuminate\Foundation\Auth\ThrottlesLogins;
+use SocialAuth;
+use Validator;
 
 class AuthController extends Controller
 {
@@ -30,11 +31,6 @@ class AuthController extends Controller
      */
     protected $redirectTo = '/';
 
-    /**
-     * Create a new authentication controller instance.
-     *
-     * @return void
-     */
     public function __construct()
     {
         $this->middleware('guest', ['except' => 'logout']);
@@ -43,14 +39,15 @@ class AuthController extends Controller
     /**
      * Get a validator for an incoming registration request.
      *
-     * @param  array  $data
+     * @param  array $data
+     *
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'name' => 'required|max:255',
-            'email' => 'required|email|max:255|unique:users',
+            'name'     => 'required|max:255',
+            'email'    => 'required|email|max:255|unique:users',
             'password' => 'required|confirmed|min:6',
         ]);
     }
@@ -58,15 +55,51 @@ class AuthController extends Controller
     /**
      * Create a new user instance after a valid registration.
      *
-     * @param  array  $data
+     * @param  array $data
+     *
      * @return User
      */
     protected function create(array $data)
     {
         return User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
+            'name'     => $data['name'],
+            'email'    => $data['email'],
             'password' => bcrypt($data['password']),
         ]);
+    }
+
+    public function facebookLogin()
+    {
+        return SocialAuth::authorize('facebook');
+    }
+
+    public function facebookRedirect()
+    {
+        // Automatically log in existing users
+        // or create a new user if necessary.
+        SocialAuth::login('facebook', function ($user, $details) {
+            $existing_user = User::where('email', $details->email)->first();
+
+            if ($existing_user !== NULL) {
+                $existing_user->avatar = $details->avatar;
+                $existing_user->save();
+
+                return $existing_user; // Tell the package to use this user instead of creating a new one.
+            }
+            $user->name = $details->full_name;
+            $user->avatar = $details->avatar;
+            $user->email = $details->email;
+            $user->save();
+            $roles_allowed = [2];
+            $user->syncRoles($roles_allowed);
+        });
+
+        // Current user is now available via Auth facade
+        $user = Auth::user();
+        if ($user->wasRecentlyCreated == TRUE) {
+            return redirect('payment')->with('message', 'Update Payment details!');
+        }
+
+        return redirect()->intended('/backend/home');
     }
 }
