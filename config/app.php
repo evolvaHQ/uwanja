@@ -161,7 +161,9 @@ return [
         Jenssegers\Agent\AgentServiceProvider::class,
         Cviebrock\EloquentSluggable\SluggableServiceProvider::class,
         Collective\Html\HtmlServiceProvider::class,
-
+        Mpociot\Teamwork\TeamworkServiceProvider::class,
+        Caffeinated\Shinobi\ShinobiServiceProvider::class,
+        Smarch\Watchtower\WatchtowerServiceProvider::class,
 
     ],
 
@@ -216,6 +218,8 @@ return [
         'Agent'      => Jenssegers\Agent\Facades\Agent::class,
         'Form'       => Collective\Html\FormFacade::class,
         'Html'       => Collective\Html\HtmlFacade::class,
+        'Shinobi'    => Caffeinated\Shinobi\Facades\Shinobi::class,
+        'Watchtower' => Smarch\Watchtower\WatchtowerFacade::class,
 
 
     ],
